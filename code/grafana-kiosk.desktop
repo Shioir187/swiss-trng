@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Grafana Kiosk
+Exec=chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --password-store=basic "https://swisstrng.grafana.net/public-dashboards/ae25eb2124cd45c6a0e98e1b5ecfc529?refresh=5s&from=now-6h&to=now&timezone=browser"
+X-GNOME-Autostart-enabled=true

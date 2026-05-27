@@ -1,0 +1,9 @@
+● mountain-beacon.service - NIST IR 8213 Beacon - Mountain RNG
+     Loaded: loaded (/etc/systemd/system/mountain-beacon.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-05-26 15:17:07 CEST; 10min ago
+ Invocation: e7581dfa5cfd4d178b9cf0be9043f1d6
+   Main PID: 1126 (python3)
+      Tasks: 3 (limit: 8796)
+        CPU: 4.003s
+     CGroup: /system.slice/mountain-beacon.service
+             └─1126 /usr/bin/python3 /home/iip/mountain-rng/beacon/beacon.py
