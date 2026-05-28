@@ -13,8 +13,6 @@ Vereint vier urspruengliche Skripte in einem Prozess:
 An Grafana wird gesendet:
   - conditioned_output     SHA-256(seed||time) erste 32 Bit als Integer
   - noise_source_shannon   Shannon-Entropie der Quelle in bit/byte
-  - color_hex              "#RRGGBB" - ANSI-256-Farbcode konvertiert
-  - color_idx              0..255 - ANSI-256-Index (fuer Thresholds in Grafana)
 """
 
 import os
@@ -80,32 +78,6 @@ stop_event              = threading.Event()
 shannon_lock            = threading.Lock()
 latest_shannon_entropy  = 0.0
 pi                      = None
-
-
-# =============================================================================
-# ANSI-256 zu Hex
-# =============================================================================
-
-def ansi256_to_hex(n):
-    """Konvertiert ANSI-256-Index (0..255) zu '#RRGGBB'."""
-    if n < 16:
-        basic = [
-            "000000", "800000", "008000", "808000",
-            "000080", "800080", "008080", "c0c0c0",
-            "808080", "ff0000", "00ff00", "ffff00",
-            "0000ff", "ff00ff", "00ffff", "ffffff",
-        ]
-        return "#" + basic[n]
-    elif n < 232:
-        n -= 16
-        r = (n // 36) % 6
-        g = (n // 6) % 6
-        b = n % 6
-        steps = [0, 95, 135, 175, 215, 255]
-        return f"#{steps[r]:02x}{steps[g]:02x}{steps[b]:02x}"
-    else:
-        gray = 8 + (n - 232) * 10
-        return f"#{gray:02x}{gray:02x}{gray:02x}"
 
 
 # =============================================================================
@@ -207,14 +179,11 @@ def refresh_seed():
             img_data = f.read()
         system_noise = os.urandom(32)
         new_seed = hashlib.sha256(img_data + system_noise).digest()
-        color_idx = new_seed[0]   # 0..255
         tmp = SEED_FILE + ".tmp"
         with open(tmp, "wb") as f:
             f.write(new_seed)
-            f.write(bytes([color_idx]))
         os.rename(tmp, SEED_FILE)
-        print(f"[SEED] Neuer Seed: {new_seed.hex()[:16]}... "
-              f"Farbe={ansi256_to_hex(color_idx)} (idx={color_idx})")
+        print(f"[SEED] Neuer Seed: {new_seed.hex()[:16]}...")
     except Exception as e:
         print(f"[SEED] Fehler: {e}")
 
@@ -224,25 +193,23 @@ def refresh_seed():
 # =============================================================================
 
 def get_mountain_data():
-    """Liest 32-Byte-Seed + Color-Index (0..255) aus current_seed.bin."""
+    """Liest 32-Byte-Seed aus current_seed.bin."""
     try:
         with open(SEED_FILE, "rb") as f:
             data = f.read()
-            return data[:32], data[32]
-    except (FileNotFoundError, IndexError):
-        return os.urandom(32), 0
+            return data[:32]
+    except FileNotFoundError:
+        return os.urandom(32)
 
 
-def send_to_grafana(color_hex, color_idx, conditioned_output, noise_source_shannon):
+def send_to_grafana(conditioned_output, noise_source_shannon):
     now_ns = str(int(time.time() * 1_000_000_000))
     payload = {
         "streams": [{
             "stream": {"job": "entropy_pi"},
             "values": [[now_ns,
                         f"conditioned_output={conditioned_output} "
-                        f"noise_source_shannon={noise_source_shannon:.4f} "
-                        f"color_hex={color_hex} "
-                        f"color_idx={color_idx}"]]
+                        f"noise_source_shannon={noise_source_shannon:.4f}"]]
         }]
     }
     try:
@@ -257,7 +224,7 @@ def send_to_grafana(color_hex, color_idx, conditioned_output, noise_source_shann
 def output_loop():
     print("[OUT] Output-Loop gestartet")
     while not stop_event.is_set():
-        seed, color_idx = get_mountain_data()
+        seed = get_mountain_data()
 
         final_hex = hashlib.sha256(seed + str(time.time()).encode()).hexdigest()
         conditioned_output = int(final_hex[:8], 16)
@@ -265,15 +232,10 @@ def output_loop():
         with shannon_lock:
             shannon = latest_shannon_entropy
 
-        color_hex = ansi256_to_hex(color_idx)
-        ansi_start = f"\033[38;5;{color_idx}m"
-        ansi_reset = "\033[0m"
+        print(f"[OUT] {final_hex}  "
+              f"| out={conditioned_output:>10}  H={shannon:.4f}")
 
-        print(f"[OUT] {ansi_start}{final_hex}{ansi_reset}  "
-              f"| out={conditioned_output:>10}  H={shannon:.4f}  "
-              f"{color_hex} (idx={color_idx})")
-
-        send_to_grafana(color_hex, color_idx, conditioned_output, shannon)
+        send_to_grafana(conditioned_output, shannon)
         stop_event.wait(OUTPUT_INTERVAL)
 
 
@@ -325,8 +287,7 @@ def main():
     print(f"Luefter Power : {MODE_POWER_DC}% @ {MODE_POWER_HZ} Hz   (Taster halten)")
     print(f"Luefter Normal: {MODE_NORMAL_DC}% @ {MODE_NORMAL_HZ} Hz")
     print(f"Kamera alle {CAMERA_INTERVAL}s, Grafana-Push alle {OUTPUT_INTERVAL}s")
-    print("Grafana-Felder: conditioned_output, noise_source_shannon,")
-    print("                color_hex, color_idx")
+    print("Grafana-Felder: conditioned_output, noise_source_shannon")
     print("Tastatur: [p] Power, [n] Normal, [o] Aus, [q] Ende")
     print("-" * 50)
 
