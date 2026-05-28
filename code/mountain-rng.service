@@ -1,0 +1,15 @@
+[Unit]
+Description=Mountain RNG Service
+After=network.target pigpiod.service
+Requires=pigpiod.service
+
+[Service]
+Type=simple
+User=iip
+WorkingDirectory=/home/iip/mountain-rng
+ExecStart=/usr/bin/python3 /home/iip/mountain-rng/Mountain_RNG.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
