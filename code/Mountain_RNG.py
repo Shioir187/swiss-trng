@@ -42,7 +42,7 @@ OUTPUT_INTERVAL = 5
 
 GRAFANA_URL   = "https://logs-prod-039.grafana.net/loki/api/v1/push"
 GRAFANA_USER  = "1543986"
-GRAFANA_TOKEN = "glc_eyJvIjoiMTcyNDEyMyIsIm4iOiJlbnRyb3B5LXBpLXBpX2dyYWZhbmFfYXBpIiwiayI6IlNWbkNINjVjNDQ1SXc0M0wwWWg3VkY5WCIsIm0iOnsiciI6InByb2QtZXUtY2VudHJhbC0wIn19"
+GRAFANA_TOKEN = "0"
 
 FAN_PIN        = 18
 BUTTON_PIN     = 27
