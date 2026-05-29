@@ -41,11 +41,3 @@ GET /docs                         interactive Swagger UI
 ## ⚠️ Disclaimer
 
 Student project, not a certified production RNG. Beacon uses a self-signed cert under a placeholder URI. Per NIST IR 8213, pulse values are public and **must not be used as secret keys** — only as a publicly verifiable randomness source.
-
-## Authors
-
-Team SwissTRNG — HSLU Informatik, IIP2 FS26.
-
-## License
-
-[MIT](LICENSE)
